@@ -1,0 +1,66 @@
+---
+title: "Practical_Machine_Learning"
+output: html_document
+---
+
+##Remove zero covariates and NA columns
+First we identify and remove variables that will make inisgnicant or null contribution to the model.
+We also select a training and testing set.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#setwd('C:/Users/jbarrera/Desktop/PML_WriteUp')
+setwd("C:/Users/Jor/Dropbox/DSciencesCoursera/08_PracticalML/WriteupProject");
+```
+
+```{r,echo=TRUE, message=FALSE, warning=FALSE}
+library(caret);
+train_df <- read.csv("pml-training.csv", header=TRUE)
+zero_var <- nearZeroVar(train_df)
+train_df <- train_df[,-zero_var]
+train_df <- train_df[,colSums(is.na(train_df))<1000]
+inTrain <- createDataPartition(y=train_df$classe,p=0.6,list=FALSE)  # trainning is around 60% 
+training <- train_df[inTrain,] 
+testing <- train_df[-inTrain,]    
+
+```
+A total of 101 variables have been removed, for example: 
+```{r,echo=FALSE, message=FALSE, warning=FALSE}
+head(names(train_df)[zero_var])
+```
+
+
+
+##Cross Validation
+For cross valudation I am using 10-Fold, hence I am using
+```{r, echo=TRUE}
+ctrl2 <- trainControl(method = "cv", number=10);
+```
+
+##Model Selection
+About the moedel selection lm and glm are out of question as they are not intended for classification. I will consider classification with trees, random forest and boosting with trees.
+
+###Classification with trees
+```{r, echo=TRUE}
+modfitdt <- train(classe~., method="rpart", data=training, trControl=ctrl2)
+pred_dt <- predict(modfitdt,newdata=testing)
+table(pred_dt,testing$classe)
+```
+
+
+###Random Forest
+```{r, echo=TRUE,eval=FALSE}
+modfit_rf <- train(classe~., method="rf", data=training, trControl=ctrl2)
+pred_rf <- predict(modfit_rf,newdata=testing)
+table(pred_rf,testing$classe)
+```
+
+
+###Boosting with trees
+```{r, echo=TRUE,eval=FALSE}
+modfit_gbm <- train(classe~., method="gbm", data=training, trControl=ctrl2)
+pred_gbm <- predict(modfit_gbm,newdata=testing)
+table(pred_gbm,testing$classe)
+```
+
+
+All of the three seem to have the same succesfull prediction as shown for classification with trees
